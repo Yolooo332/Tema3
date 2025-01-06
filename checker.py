@@ -11,29 +11,29 @@ def dispatch_helper():
 def check_task_1_1():
     dispatch_helper()
     os.system("gcc checker/checker.c checker/helper.o src/task1.c src/task3.c -o checker.exe -Iinclude")
-    os.system("chmod +x checker.exe") 
-    result = subprocess.run(['./checker.exe', '1'], capture_output=True, text=True)  
+    os.system("chmod +x checker.exe")
+    result = subprocess.run(['./checker.exe', '1'], capture_output=True, text=True)
     print(result.stdout)
     return result.returncode
 
 def check_task_1_2():
     dispatch_helper()
     os.system("gcc checker/checker.c checker/helper.o src/task1.c src/task3.c -o checker.exe -Iinclude")
-    os.system("chmod +x checker.exe") 
-    result = subprocess.run(['./checker.exe', '2'], capture_output=True, text=True)  
+    os.system("chmod +x checker.exe")
+    result = subprocess.run(['./checker.exe', '2'], capture_output=True, text=True)
     print(result.stdout)
     return result.returncode
 
 def check_task_1_3():
     dispatch_helper()
     os.system("gcc checker/checker.c checker/helper.o src/task1.c src/task3.c -o checker.exe -Iinclude")
-    os.system("chmod +x checker.exe") 
-    
+    os.system("chmod +x checker.exe")
+
     result = subprocess.run(['./checker.exe', '3'], capture_output=True, text=True)
     if result.returncode != 5:
         print(result.stdout)
         return 0
-    
+
     result = subprocess.run(['valgrind', '--leak-check=full', './checker.exe', '3'], capture_output=True, text=True)
     if "ERROR SUMMARY: 0 errors from 0 contexts" in result.stderr:
         print("Task 1.3 trecut cu succes!")
@@ -68,7 +68,7 @@ def check_task_2():
         print("Eroare la compilare!")
         print(result_make.stderr)
         return 0
-    
+
     points = 0
     valgrind_pass = True
     os.system("chmod +x tema3")
@@ -90,17 +90,17 @@ def check_task_2():
 
             with open(input_test, 'r') as f:
                 result = subprocess.run(['./tema3', 'tests/db/' + database], stdin=f, capture_output=True, text=True)
-            
+
             if result.returncode != 0:
                 print("Eroare de rulare! Posibil segmentation fault.")
                 continue
 
             with open(output_test, 'w') as f:
                 f.write(result.stdout)
-            
+
             if (os.system(f"diff {output_test} {ref_test} > /dev/null") != 0):
                 print("Rezultat incorect!")
-            
+
             else:
                 print(f"{test} - OK")
                 points += 3.5
@@ -110,7 +110,7 @@ def check_task_2():
         print("Depunctare pentru memory leaks. -10 puncte")
         points -= 10
 
-    print("Numarul total de puncte: " + str(points))        
+    print("Numarul total de puncte: " + str(points))
     return points
 
 def check_task_3():
@@ -118,10 +118,10 @@ def check_task_3():
         os.makedirs("tests/output/task3")
     dispatch_helper()
     os.system("gcc checker/checker.c checker/helper.o src/task1.c src/task3.c -o checker.exe -Iinclude")
-    os.system("chmod +x checker.exe") 
-    result = subprocess.run(['./checker.exe', '4'], capture_output=True, text=True)  
+    os.system("chmod +x checker.exe")
+    result = subprocess.run(['./checker.exe', '4'], capture_output=True, text=True)
     print(result.stdout)
-    
+
     print("TASK 3")
     print("----------------")
 
