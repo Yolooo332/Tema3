@@ -6,7 +6,7 @@ BLUE="\033[1;34m"
 RED="\033[1;31m"
 RESET="\033[0m"
 
-if ! command -v brew install &> /dev/null; then
+if ! command -v apt-get install &> /dev/null; then
     # echo -e "${RED}Error: apt-get is not installed or not in the PATH. Please install apt-get to proceed.${RESET}"
     exit 1
 fi
@@ -16,7 +16,7 @@ check_and_install() {
     echo -e "${BLUE}Checking for ${package}...${RESET}"
     if ! dpkg -l | grep -q "^ii.*${package} "; then
         echo -e "${YELLOW}${package} not found. Installing...${RESET}"
-        if ! brew install -y "$package"; then
+        if ! apt-get install -y "$package"; then
             echo -e "${RED}Error: Failed to install ${package}. Exiting.${RESET}"
             exit 1
         fi
@@ -29,7 +29,7 @@ check_python_and_pip() {
     echo -e "${BLUE}Checking for Python and pip...${RESET}"
     if ! command -v python3 &> /dev/null && ! command -v python &> /dev/null; then
         echo -e "${YELLOW}Python is not installed. Installing...${RESET}"
-        if ! brew install -y python3; then
+        if ! apt-get install -y python3; then
             echo -e "${RED}Error: Failed to install Python. Exiting.${RESET}"
             exit 1
         fi
@@ -37,7 +37,7 @@ check_python_and_pip() {
 
     if ! command -v pip3 &> /dev/null && ! command -v pip &> /dev/null; then
         echo -e "${YELLOW}pip is not installed. Installing...${RESET}"
-        if ! brew install -y python3-pip; then
+        if ! apt-get install -y python3-pip; then
             echo -e "${RED}Error: Failed to install pip. Exiting.${RESET}"
             exit 1
         fi
@@ -57,11 +57,11 @@ install_cpplint() {
     fi
 }
 
-# echo -e "${GREEN}Updating package lists...${RESET}"
-# if ! sudo apt-get update; then
-#     echo -e "${RED}Error: Failed to update package lists. Exiting.${RESET}"
-#     exit 1
-# fi
+echo -e "${GREEN}Updating package lists...${RESET}"
+if ! sudo apt-get update; then
+    echo -e "${RED}Error: Failed to update package lists. Exiting.${RESET}"
+    exit 1
+fi
 
 check_and_install "valgrind"
 check_and_install "clang"

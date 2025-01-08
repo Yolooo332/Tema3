@@ -33,19 +33,19 @@ int check_alocare_secretariat() {
         return 0;
     }
 
-    if (strcmp(s->studenti[4].nume, "Popescu Adrian") != 0 || s->studenti[4].id != 4 
+    if (strcmp(s->studenti[4].nume, "Popescu Adrian") != 0 || s->studenti[4].id != 4
                     || s->studenti[4].an_studiu != 3 || s->studenti[4].statut != 'b' || !eps_eq(s->studenti[4].medie_generala, 7.74)) {
         printf("Studentii au fost salvati gresit!\n");
         return 0;
     }
 
-    if (strcmp(s->materii[3].nume, "Fizica") != 0 || s->materii[3].id != 3 
+    if (strcmp(s->materii[3].nume, "Fizica") != 0 || s->materii[3].id != 3
                     || strcmp(s->materii[3].nume_titular, "Petrescu Cristina") != 0) {
         printf("Materiile au fost salvate gresit!\n");
         return 0;
     }
 
-    if (s->inrolari[5].id_student != 2 || s->inrolari[5].id_materie != 0 
+    if (s->inrolari[5].id_student != 2 || s->inrolari[5].id_materie != 0
                     || !eps_eq(s->inrolari[5].note[0], 2.22)  || !eps_eq(s->inrolari[5].note[1], 1.50) || !eps_eq(s->inrolari[5].note[2], 3.08)) {
         printf("Inrolarile au fost salvate gresit!\n");
         return 0;
@@ -65,7 +65,7 @@ int check_adauga_student() {
         return 0;
     }
 
-    if (strcmp(s->studenti[10].nume, "Popescu Adrian") != 0 || s->studenti[10].id != 11 
+    if (strcmp(s->studenti[10].nume, "Popescu Adrian") != 0 || s->studenti[10].id != 11
                     || s->studenti[10].an_studiu != 3 || s->studenti[10].statut != 'b') {
         printf("Studentii au fost salvati gresit!\n");
         return 0;
@@ -120,9 +120,9 @@ int main(int argc, char *argv[]) {
         if (check_alocare_secretariat()) {
             printf("Task 1.1 trecut cu succes!\n");
             return 3;
-        } else 
+        } else
             printf("Task 1.1 incorect!\n");
-        
+
         return 0;
     }
 
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
             return 2;
         } else
             printf("Task 1.2 incorect!\n");
-        
+
         return 0;
     }
 

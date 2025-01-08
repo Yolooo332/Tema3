@@ -38,4 +38,3 @@ struct inrolare {
     int id_materie;                       // ID-ul materiei
     float note[NUMBER_OF_GRADES];         // Notele studentului (laborator, parțial, final)
 };
-
