@@ -7,6 +7,10 @@
 #define MAX_FIELDS 256
 
 int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        return 1;
+    }
+
     char* db = strdup(argv[1]);
     FILE* file = fopen(db, "r");
     if (!file) {
@@ -15,23 +19,31 @@ int main(int argc, char *argv[]) {
     }
 
     secretariat* s = citeste_secretariat(db);
+    if (!s) {
+        fclose(file);
+        free(db);
+        return 0;
+    }
+
     int query_count = 0;
-    char query[MAX_LINE];
+    char query[MAX_LINE] = {0};
 
     if (scanf("%d", &query_count) != 1) {
+        elibereaza_secretariat(&s);
+        fclose(file);
         free(db);
         return 0;
     }
     getchar();
 
-    char fields[MAX_FIELDS][MAX_FIELDS], tables[MAX_TABLES][MAX_TABLES];
+    char fields[MAX_FIELDS][MAX_FIELDS] = {0}, tables[MAX_TABLES][MAX_TABLES] = {0};
     for (int i = 0; i < query_count; i++) {
         if (fgets(query, sizeof(query), stdin)) {
             query[strcspn(query, "\r\n")] = '\0';
             query[strcspn(query, ";")] = '\0';
 
-            char field_buffer[MAX_LINE] = "";
-            char table_buffer[MAX_LINE] = "";
+            char field_buffer[MAX_LINE] = {0};
+            char table_buffer[MAX_LINE] = {0};
 
             char* from_keyword = strstr(query, " FROM ");
             if (from_keyword) {
@@ -54,7 +66,7 @@ int main(int argc, char *argv[]) {
                         }
                     } else {
                         for (int j = 0; j < s->nr_studenti; j++) {
-                            char field_copy[MAX_FIELDS];
+                            char field_copy[MAX_FIELDS] = {0};
                             snprintf(field_copy, sizeof(field_copy), "%s", fields[i]);
                             char* token = strtok(field_copy, " ");
                             int first = 1;
@@ -88,7 +100,7 @@ int main(int argc, char *argv[]) {
                         }
                     } else {
                         for (int j = 0; j < s->nr_materii; j++) {
-                            char field_copy[MAX_FIELDS];
+                            char field_copy[MAX_FIELDS] = {0};
                             snprintf(field_copy, sizeof(field_copy), "%s", fields[i]);
                             char* token = strtok(field_copy, " ");
                             int first = 1;
@@ -120,7 +132,7 @@ int main(int argc, char *argv[]) {
                         }
                     } else {
                         for (int j = 0; j < s->nr_inrolari; j++) {
-                            char field_copy[MAX_FIELDS];
+                            char field_copy[MAX_FIELDS] = {0};
                             snprintf(field_copy, sizeof(field_copy), "%s", fields[i]);
                             char* token = strtok(field_copy, " ");
                             int first = 1;
@@ -147,7 +159,7 @@ int main(int argc, char *argv[]) {
     }
 
     fclose(file);
-    free(db);
     elibereaza_secretariat(&s);
+    free(db);
     return 0;
 }

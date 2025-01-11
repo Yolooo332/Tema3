@@ -17,11 +17,22 @@ float round_two(float valoare) {
 
 secretariat *citeste_secretariat(const char *nume_fisier) {
     FILE* f = fopen(nume_fisier, "r");
-    if (f == NULL) {
+    if (!f) {
         return NULL;
     }
 
     secretariat* s = malloc(sizeof(secretariat));
+    if (!s) {
+        fclose(f);
+        return NULL;
+    }
+
+    s->nr_studenti = 0;
+    s->studenti = NULL;
+    s->nr_materii = 0;
+    s->materii = NULL;
+    s->nr_inrolari = 0;
+    s->inrolari = NULL;
 
     char line[MAX_LINE];
     int section = -1;
@@ -84,7 +95,15 @@ secretariat *citeste_secretariat(const char *nume_fisier) {
             &new_inrolare->id_student, &new_inrolare->id_materie,
             &new_inrolare->note[0], &new_inrolare->note[1], &new_inrolare->note[2]);
 
-            int* numar_materii = malloc(s->nr_studenti * sizeof(int));
+            int* numar_materii = calloc(s->nr_studenti, sizeof(int));
+            if (!numar_materii) {
+                fclose(f);
+                free(s->studenti);
+                free(s->materii);
+                free(s->inrolari);
+                free(s);
+                return NULL;
+            }
             for (int i = 0; i < s->nr_inrolari; i++) {
                 numar_materii[s->inrolari[i].id_student]++;
             }
@@ -103,6 +122,7 @@ secretariat *citeste_secretariat(const char *nume_fisier) {
                     s->studenti[i].medie_generala = round_two(s->studenti[i].medie_generala);
                 }
             }
+            free(numar_materii);
         }
     }
 
@@ -125,6 +145,9 @@ void elibereaza_secretariat(secretariat **s) {
         return;
     }
 
+    // for (int i = 0; i < (*s)->nr_studenti; i++) {
+    //     free((*s)->studenti[i].nume);
+    // }
     free((*s)->studenti);
 
     if ((*s)->materii) {
