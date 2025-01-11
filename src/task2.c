@@ -2,6 +2,7 @@
 
 #define BUFFER_FIELD 7
 #define BUFFER_TABLE 6
+#define BUFFER_CONDITION 4
 #define MAX_LINE 256
 #define MAX_TABLES 256
 #define MAX_FIELDS 256
@@ -36,7 +37,7 @@ int main(int argc, char *argv[]) {
     }
     getchar();
 
-    char fields[MAX_FIELDS][MAX_FIELDS] = {0}, tables[MAX_TABLES][MAX_TABLES] = {0};
+    char fields[MAX_FIELDS][MAX_FIELDS] = {0}, tables[MAX_TABLES][MAX_TABLES] = {0}, conditions[MAX_TABLES][MAX_TABLES] = {0};
     for (int i = 0; i < query_count; i++) {
         if (fgets(query, sizeof(query), stdin)) {
             query[strcspn(query, "\r\n")] = '\0';
@@ -44,15 +45,27 @@ int main(int argc, char *argv[]) {
 
             char field_buffer[MAX_LINE] = {0};
             char table_buffer[MAX_LINE] = {0};
+            char condition_buffer[MAX_LINE] = {0};
 
             char* from_keyword = strstr(query, " FROM ");
             if (from_keyword) {
                 *from_keyword = '\0';
                 snprintf(field_buffer, sizeof(field_buffer), "%s", query + BUFFER_FIELD);
-                snprintf(table_buffer, sizeof(table_buffer), "%s", from_keyword + BUFFER_TABLE);
+                // snprintf(table_buffer, sizeof(table_buffer), "%s", from_keyword + BUFFER_TABLE);
+
+                char* where_keyword = strstr(from_keyword  + 6, " WHERE ");
+                if (where_keyword) {
+                    *where_keyword = '\0';
+                    strcpy(table_buffer, from_keyword + 6);
+                    strcpy(condition_buffer, where_keyword + 7);
+                    // snprintf(condition_buffer, sizeof(condition_buffer), "%s", where_keyword + 7);
+                } else {
+                    strcpy(table_buffer, from_keyword + 6);
+                }
 
                 snprintf(fields[i], sizeof(fields[i]), "%s", field_buffer);
                 snprintf(tables[i], sizeof(tables[i]), "%s", table_buffer);
+                snprintf(conditions[i], sizeof(conditions[i]), "%s", condition_buffer);
 
                 if (strcmp(tables[i], "studenti") == 0) {
                     if (strcmp(fields[i], "*") == 0) {
