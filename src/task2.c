@@ -11,6 +11,7 @@
 #define MAX_TABLES 256
 #define MAX_FIELDS 256
 #define NMAX 100
+#define NUMBER_OF_GRADES 3
 
 void recalculate_media_generala(secretariat* s) {
     for (int i = 0; i < s->nr_studenti; i++) {
