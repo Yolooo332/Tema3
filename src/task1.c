@@ -8,16 +8,17 @@
 #define ROUND_PRECISION_FLOAT 100.0f
 #define ROUND_HALF_FLOAT 0.5f
 #define ROUND_HALF 0.5
+#define EPSILON 0.01
 
 #include "task1.h"
 
 float round_two(float valoare) {
-    return ((float)((int)(valoare * ROUND_PRECISION + ROUND_HALF_FLOAT))) / ROUND_PRECISION_FLOAT;
+    return ((float)((int)(valoare * ROUND_PRECISION + ROUND_HALF_FLOAT + EPSILON))) / ROUND_PRECISION_FLOAT;
 }
 
 secretariat *citeste_secretariat(const char *nume_fisier) {
     FILE* f = fopen(nume_fisier, "r");
-    if (!f) {
+    if (f == NULL) {
         return NULL;
     }
 
@@ -27,8 +28,8 @@ secretariat *citeste_secretariat(const char *nume_fisier) {
         return NULL;
     }
 
-    s->nr_studenti = 0;
     s->studenti = NULL;
+    s->nr_studenti = 0;
     s->nr_materii = 0;
     s->materii = NULL;
     s->nr_inrolari = 0;
@@ -92,37 +93,39 @@ secretariat *citeste_secretariat(const char *nume_fisier) {
             }
             inrolare* new_inrolare = &s->inrolari[s->nr_inrolari++];
             sscanf(line, "%d, %d, %f %f %f",
-            &new_inrolare->id_student, &new_inrolare->id_materie,
-            &new_inrolare->note[0], &new_inrolare->note[1], &new_inrolare->note[2]);
+                &new_inrolare->id_student,
+                &new_inrolare->id_materie,
+                &new_inrolare->note[0],
+                &new_inrolare->note[1],
+                &new_inrolare->note[2]);
 
             int* numar_materii = calloc(s->nr_studenti, sizeof(int));
+            float* suma_note = calloc(s->nr_studenti, sizeof(float));
             if (!numar_materii) {
                 fclose(f);
                 free(s->studenti);
                 free(s->materii);
                 free(s->inrolari);
                 free(s);
+                free(numar_materii);
+                free(suma_note);
                 return NULL;
             }
             for (int i = 0; i < s->nr_inrolari; i++) {
                 numar_materii[s->inrolari[i].id_student]++;
-            }
-            for (int i = 0; i < s->nr_inrolari; i++) {
-                inrolare *inr = &s->inrolari[i];
-                for (int j = 0; j < s->nr_studenti; j++) {
-                    if (s->studenti[j].id == inr->id_student) {
-                        s->studenti[j].medie_generala = inr->note[0] + inr->note[1] + inr->note[2];
-                        break;
-                    }
-                }
+                suma_note[s->inrolari[i].id_student] +=
+                    s->inrolari[i].note[0] +
+                    s->inrolari[i].note[1] +
+                    s->inrolari[i].note[2];
             }
             for (int i = 0; i < s->nr_studenti; i++) {
                 if (numar_materii[i] > 0) {
-                    s->studenti[i].medie_generala /= (float)(numar_materii[i]);
+                    s->studenti[i].medie_generala = suma_note[i] / (float)(numar_materii[i]);
                     s->studenti[i].medie_generala = round_two(s->studenti[i].medie_generala);
                 }
             }
             free(numar_materii);
+            free(suma_note);
         }
     }
 

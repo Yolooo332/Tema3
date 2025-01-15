@@ -13,9 +13,6 @@
 #define NMAX 100
 #define NUMBER_OF_GRADES 3
 
-float round_two(float valoare) {
-    return ((float)((int)(valoare * 100 + 0.5f))) / 100.0f;
-}
 void recalculate_media_generala(secretariat* s) {
     for (int i = 0; i < s->nr_studenti; i++) {
         float total = 0.0f;
@@ -246,7 +243,7 @@ void update_field(void* s_void, const char* table, const char* field, const char
         if (strcmp(field, "id ") == 0) {
             s->id = val;
         } else if (strcmp(field, "nume ") == 0) {
-            strcpy(s->nume, value);
+            snprintf(s->nume, sizeof(s->nume), "%s", stripped_value);
         } else if (strcmp(field, "an_studiu ") == 0) {
             s->an_studiu = val;
         } else if (strcmp(field, "statut ") == 0) {
@@ -259,9 +256,9 @@ void update_field(void* s_void, const char* table, const char* field, const char
         if (strcmp(field, "id ") == 0) {
             s->id = val;
         } else if (strcmp(field, "nume ") == 0) {
-            strcpy(s->nume, value);
+            snprintf(s->nume, sizeof(s->nume), "%s", stripped_value);
         } else if (strcmp(field, "nume_titular ") == 0) {
-            strcpy(s->nume_titular, value);
+            snprintf(s->nume_titular, sizeof(s->nume_titular), "%s", stripped_value);
         }
     } else if (strcmp(table, "inrolari") == 0) {
         inrolare* s = (inrolare*)s_void;
@@ -298,14 +295,14 @@ void delete_record(void* s_void, const char* table) {
 }
 
 int main(int argc, char *argv[]) {
-    char* db = strdup("shit.txt");
-    FILE* file = fopen(db, "r");
-    if (!file) {
+    if (argc < 2) {
         return 0;
     }
 
-    FILE* finput = fopen("data.txt", "r");
-    if (!finput) {
+    char* db = strdup(argv[1]);
+    FILE* file = fopen(db, "r");
+    if (!file) {
+        free(db);
         return 0;
     }
 
@@ -314,13 +311,14 @@ int main(int argc, char *argv[]) {
     char query[MAX_TABLES] = {0};
 
     if (scanf("%d", &query_count) != 1) {
+        free(db);
         return 0;
     }
     getchar();
 
     char fields[NMAX][NMAX], tables[NMAX][NMAX], conditions[NMAX][NMAX], values[NMAX][NMAX];
     for (int i = 0; i < query_count; i++) {
-        if (fgets(query, sizeof(query), finput)) {
+        if (fgets(query, sizeof(query), stdin)) {
             query[strcspn(query, "\r\n")] = '\0';
             query[strcspn(query, ";")] = '\0';
 
@@ -610,6 +608,7 @@ int main(int argc, char *argv[]) {
     }
 
     fclose(file);
+    free(db);
     elibereaza_secretariat(&s);
     return 0;
 }
