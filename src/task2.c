@@ -13,9 +13,12 @@
 #define NMAX 100
 #define NUMBER_OF_GRADES 3
 
+float round_two(float valoare) {
+    return ((float)((int)(valoare * 100 + 0.5f))) / 100.0f;
+}
 void recalculate_media_generala(secretariat* s) {
     for (int i = 0; i < s->nr_studenti; i++) {
-        float total = 0.0;
+        float total = 0.0f;
         int count = 0;
         for (int j = 0; j < s->nr_inrolari; j++) {
             if (s->inrolari[j].id_student == s->studenti[i].id) {
@@ -28,12 +31,12 @@ void recalculate_media_generala(secretariat* s) {
             }
         }
         if (count > 0) {
-            s->studenti[i].medie_generala = total / count;
+            s->studenti[i].medie_generala = (float)total / (float)count;
         } else {
-            s->studenti[i].medie_generala = 0.0;
+            s->studenti[i].medie_generala = 0.0f;
         }
         if (s->studenti[i].medie_generala == 0.0) {
-            s->studenti[i].medie_generala = -1.0;
+            s->studenti[i].medie_generala = -1.0f;
         }
     }
 }
@@ -42,21 +45,21 @@ int evaluate_conditions(char* condition, void* s_void, const char* table) {
         return 1;
     }
 
-    char condition_copy[256];
-    strcpy(condition_copy, condition);
+    char condition_copy[MAX_LINE];
+    snprintf(condition_copy, sizeof(condition_copy), "%s", condition);
 
     char* remaining_conditions = condition_copy;
     while (remaining_conditions) {
         char* and_pos = strstr(remaining_conditions, " AND ");
-        char token[256];
+        char token[MAX_LINE];
 
         if (and_pos) {
-            size_t token_length = and_pos - remaining_conditions;
-            strncpy(token, remaining_conditions, token_length);
+            long token_length = and_pos - remaining_conditions;
+            snprintf(token, token_length + BUFFER_EQUAL, "%.*s", (int)token_length, remaining_conditions);
             token[token_length] = '\0';
-            remaining_conditions = and_pos + 5;
+            remaining_conditions = and_pos + BUFFER_VALUE;
         } else {
-            strcpy(token, remaining_conditions);
+            snprintf(token, sizeof(token), "%s", remaining_conditions);
             remaining_conditions = NULL;
         }
 
@@ -66,12 +69,12 @@ int evaluate_conditions(char* condition, void* s_void, const char* table) {
 
         if (!value) {
             value = operator;
-            operator = field + strlen(field) + 1;
+            operator = field + strlen(field) + BUFFER_EQUAL;
             while (*operator == ' ') operator++;
             char* end_operator = operator;
             while (*end_operator && *end_operator != ' ') end_operator++;
             *end_operator = '\0';
-            value = end_operator + 1;
+            value = end_operator + BUFFER_EQUAL;
             while (*value == ' ') value++;
         }
 
@@ -124,7 +127,7 @@ int evaluate_conditions(char* condition, void* s_void, const char* table) {
                 }
             }
             if (strcmp(field, "medie_generala") == 0) {
-                float val_float = atof(value);
+                float val_float = (float)atof(value);
                 if (strcmp(operator, "=") == 0 && s->medie_generala != val_float) {
                     return 0;
                 } else if (strcmp(operator, ">") == 0 && s->medie_generala <= val_float) {
@@ -204,7 +207,7 @@ int evaluate_conditions(char* condition, void* s_void, const char* table) {
                     return 0;
                 }
             } else if (strcmp(field, "note") == 0) {
-                float val_float = atof(value);
+                float val_float = (float)atof(value);
                 for (int i = 0; i < NUMBER_OF_GRADES; i++) {
                     if (strcmp(operator, "=") == 0 && s->note[i] != val_float) {
                         return 0;
@@ -227,7 +230,16 @@ int evaluate_conditions(char* condition, void* s_void, const char* table) {
 }
 void update_field(void* s_void, const char* table, const char* field, const char* value) {
     int val = atoi(value);
-    float val_float = atof(value);
+    float val_float = (float)atof(value);
+
+    char stripped_value[MAX_LINE];
+    if (value[0] == '"' && value[strlen(value) - 1] == '"') {
+        strncpy(stripped_value, value + 1, strlen(value) - 2);
+        stripped_value[strlen(value) - 2] = '\0';
+    } else {
+        strncpy(stripped_value, value, sizeof(stripped_value));
+        stripped_value[sizeof(stripped_value) - 1] = '\0';
+    }
 
     if (strcmp(table, "studenti") == 0) {
         student* s = (student*)s_void;
@@ -269,7 +281,7 @@ void delete_record(void* s_void, const char* table) {
         s->nume[0] = '\0';
         s->an_studiu = -1;
         s->statut = '\0';
-        s->medie_generala = -1.0;
+        s->medie_generala = -1.0f;
     } else if (strcmp(table, "materii") == 0) {
         materie* s = (materie*)s_void;
         s->id = -1;
@@ -286,100 +298,86 @@ void delete_record(void* s_void, const char* table) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        return 1;
-    }
-
-    char* db = strdup(argv[1]);
+    char* db = strdup("shit.txt");
     FILE* file = fopen(db, "r");
     if (!file) {
-        free(db);
+        return 0;
+    }
+
+    FILE* finput = fopen("data.txt", "r");
+    if (!finput) {
         return 0;
     }
 
     secretariat* s = citeste_secretariat(db);
-    if (!s) {
-        fclose(file);
-        free(db);
-        return 0;
-    }
-
     int query_count = 0;
-    char query[MAX_LINE] = {0};
+    char query[MAX_TABLES] = {0};
 
     if (scanf("%d", &query_count) != 1) {
-        elibereaza_secretariat(&s);
-        fclose(file);
-        free(db);
         return 0;
     }
     getchar();
 
-    char fields[MAX_FIELDS][MAX_FIELDS] = {0}, tables[MAX_TABLES][MAX_TABLES] = {0}, conditions[MAX_TABLES][MAX_TABLES] = {0}, values[MAX_FIELDS][MAX_FIELDS] = {0};
+    char fields[NMAX][NMAX], tables[NMAX][NMAX], conditions[NMAX][NMAX], values[NMAX][NMAX];
     for (int i = 0; i < query_count; i++) {
-        if (fgets(query, sizeof(query), stdin)) {
+        if (fgets(query, sizeof(query), finput)) {
             query[strcspn(query, "\r\n")] = '\0';
             query[strcspn(query, ";")] = '\0';
 
-            char field_buffer[MAX_LINE] = {0};
-            char table_buffer[MAX_LINE] = {0};
+            char field_buffer[MAX_FIELDS] = {0};
+            char table_buffer[MAX_TABLES] = {0};
             char condition_buffer[MAX_LINE] = {0};
             char value_buffer[MAX_LINE] = {0};
 
-            if (strncmp(query, "SELECT", 6) == 0) {
+            if (strncmp(query, "SELECT", BUFFER_TABLE) == 0) {
                 char* from_keyword = strstr(query, " FROM ");
                 if (from_keyword) {
                     *from_keyword = '\0';
-                    // strcpy(field_buffer, query + BUFFER_FIELD);
                     snprintf(field_buffer, sizeof(field_buffer), "%s", query + BUFFER_FIELD);
-
 
                     char* where_keyword = strstr(from_keyword + BUFFER_TABLE, " WHERE ");
                     if (where_keyword) {
                         *where_keyword = '\0';
-                        // strcpy(table_buffer, from_keyword + BUFFER_TABLE);
                         snprintf(table_buffer, sizeof(table_buffer), "%s", from_keyword + BUFFER_TABLE);
-                        // strcpy(condition_buffer, where_keyword + BUFFER_FIELD);
-                        snprintf(condition_buffer, sizeof(condition_buffer), "%s", where_keyword + BUFFER_CONDITION);
-                        // snprintf(condition_buffer, sizeof(condition_buffer), "%s", where_keyword + 7);
+                        snprintf(condition_buffer, sizeof(condition_buffer), "%s", where_keyword + BUFFER_FIELD);
                     } else {
-                        // strcpy(table_buffer, from_keyword + BUFFER_TABLE);
                         snprintf(table_buffer, sizeof(table_buffer), "%s", from_keyword + BUFFER_TABLE);
                     }
 
-                    // strcpy(fields[i], field_buffer);
                     snprintf(fields[i], sizeof(fields[i]), "%s", field_buffer);
-                    // strcpy(tables[i], table_buffer);
                     snprintf(tables[i], sizeof(tables[i]), "%s", table_buffer);
-                    // strcpy(conditions[i], condition_buffer);
                     snprintf(conditions[i], sizeof(conditions[i]), "%s", condition_buffer);
 
                     if (strcmp(tables[i], "studenti") == 0) {
                         if (strcmp(fields[i], "*") == 0) {
                             for (int j = 0; j < s->nr_studenti; j++) {
-                                if (strlen(condition_buffer) == 0 || evaluate_conditions(condition_buffer, &s->studenti[j], "studenti")) {
-                                    if (s->studenti[j].id != -1 || s->studenti[j].nume[0] != '\0' || s->studenti[j].an_studiu != -1 || s->studenti[j].statut != '\0' || s->studenti[j].medie_generala != -1) {
+                                if (strlen(condition_buffer) == 0 ||
+                                    evaluate_conditions(condition_buffer, &s->studenti[j], "studenti")) {
+                                    if (s->studenti[j].id != -1 || s->studenti[j].nume[0] != '\0' ||
+                                        s->studenti[j].an_studiu != -1 || s->studenti[j].statut != '\0' ||
+                                        s->studenti[j].medie_generala != -1) {
                                         printf("%d %s %d %c %.2f\n",
                                             s->studenti[j].id,
                                             s->studenti[j].nume,
                                             s->studenti[j].an_studiu,
                                             s->studenti[j].statut,
-                                            s->studenti[j].medie_generala
-                                        );
+                                            s->studenti[j].medie_generala);
                                     }
                                 }
                             }
                         } else {
                             for (int j = 0; j < s->nr_studenti; j++) {
-                                if (strlen(condition_buffer) == 0 || evaluate_conditions(condition_buffer, &s->studenti[j], "studenti")) {
+                                if (strlen(condition_buffer) == 0 ||
+                                    evaluate_conditions(condition_buffer, &s->studenti[j], "studenti")) {
                                     char field_copy[NMAX];
-                                    // strcpy(field_copy, fields[i]);
                                     snprintf(field_copy, sizeof(field_copy), "%s", fields[i]);
                                     char* token = strtok(field_copy, " ");
                                     int first = 1;
                                     while (token) {
                                         if (!first) {
-                                            if (s->studenti[j].id != -1 || s->studenti[j].nume[0] != '\0' || s->studenti[j].an_studiu != -1 || s->studenti[j].statut != '\0' || s->studenti[j].medie_generala != -1) {
+                                            if (s->studenti[j].id != -1 || s->studenti[j].nume[0] != '\0' ||
+                                                s->studenti[j].an_studiu != -1 || s->studenti[j].statut != '\0' ||
+                                                s->studenti[j].medie_generala != -1) {
                                                 printf(" ");
                                             }
                                         }
@@ -397,11 +395,14 @@ int main(int argc, char *argv[]) {
                                             if (s->studenti[j].statut != '\0')
                                                 printf("%c", s->studenti[j].statut);
                                         if (strstr(token, "medie_generala") || strstr(token, " medie_generala"))
-                                            if (s->studenti[j].medie_generala != -1 || s->studenti[j].medie_generala != -1.00)
+                                            if (s->studenti[j].medie_generala != -1 ||
+                                                s->studenti[j].medie_generala != -1.00)
                                                 printf("%.2f", s->studenti[j].medie_generala);
                                         token = strtok(NULL, " ");
                                     }
-                                    if (s->studenti[j].id != -1 || s->studenti[j].nume[0] != '\0' || s->studenti[j].an_studiu != -1 || s->studenti[j].statut != '\0' || s->studenti[j].medie_generala != -1) {
+                                    if (s->studenti[j].id != -1 || s->studenti[j].nume[0] != '\0' ||
+                                        s->studenti[j].an_studiu != -1 || s->studenti[j].statut != '\0' ||
+                                        s->studenti[j].medie_generala != -1) {
                                         printf("\n");
                                     }
                                 }
@@ -410,27 +411,29 @@ int main(int argc, char *argv[]) {
                     } else if (strcmp(tables[i], "materii") == 0) {
                         if (strcmp(fields[i], "*") == 0) {
                             for (int j = 0; j < s->nr_materii; j++) {
-                                if (strlen(condition_buffer) == 0 || evaluate_conditions(condition_buffer, &s->materii[j], "materii")) {
-                                    if (s->materii[j].id != -1 || s->materii[j].nume[0] != '\0' || s->materii[j].nume_titular[0] != '\0') {
+                                if (strlen(condition_buffer) == 0 ||
+                                    evaluate_conditions(condition_buffer, &s->materii[j], "materii")) {
+                                    if (s->materii[j].id != -1 || s->materii[j].nume[0] != '\0' ||
+                                        s->materii[j].nume_titular[0] != '\0') {
                                         printf("%d %s %s\n",
                                             s->materii[j].id,
                                             s->materii[j].nume,
-                                            s->materii[j].nume_titular
-                                        );
+                                            s->materii[j].nume_titular);
                                     }
                                 }
                             }
                         } else {
                             for (int j = 0; j < s->nr_materii; j++) {
-                                if (strlen(condition_buffer) == 0 || evaluate_conditions(condition_buffer, &s->materii[j], "materii")) {
+                                if (strlen(condition_buffer) == 0 ||
+                                    evaluate_conditions(condition_buffer, &s->materii[j], "materii")) {
                                     char field_copy[NMAX];
-                                    // strcpy(field_copy, fields[i]);
                                     snprintf(field_copy, sizeof(field_copy), "%s", fields[i]);
                                     char* token = strtok(field_copy, " ");
                                     int first = 1;
                                     while (token) {
                                         if (!first) {
-                                            if (s->materii[j].id != -1 || s->materii[j].nume[0] != '\0' || s->materii[j].nume_titular[0] != '\0') {
+                                            if (s->materii[j].id != -1 || s->materii[j].nume[0] != '\0' ||
+                                                s->materii[j].nume_titular[0] != '\0') {
                                                 printf(" ");
                                             }
                                         }
@@ -446,7 +449,8 @@ int main(int argc, char *argv[]) {
                                                 printf("%s", s->materii[j].nume_titular);
                                         token = strtok(NULL, " ");
                                     }
-                                    if (s->materii[j].id != -1 || s->materii[j].nume[0] != '\0' || s->materii[j].nume_titular[0] != '\0') {
+                                    if (s->materii[j].id != -1 || s->materii[j].nume[0] != '\0' ||
+                                        s->materii[j].nume_titular[0] != '\0') {
                                         printf("\n");
                                     }
                                 }
@@ -455,29 +459,33 @@ int main(int argc, char *argv[]) {
                     } else if (strcmp(tables[i], "inrolari") == 0) {
                         if (strcmp(fields[i], "*") == 0) {
                             for (int j = 0; j < s->nr_inrolari; j++) {
-                                if (strlen(condition_buffer) == 0 || evaluate_conditions(condition_buffer, &s->inrolari[j], "inrolari")) {
-                                    if (s->inrolari[j].id_student != -1 || s->inrolari[j].id_materie != -1 || s->inrolari[j].note[0] != -1 || s->inrolari[j].note[1] != -1 || s->inrolari[j].note[2] != -1) {
+                                if (strlen(condition_buffer) == 0 ||
+                                    evaluate_conditions(condition_buffer, &s->inrolari[j], "inrolari")) {
+                                    if (s->inrolari[j].id_student != -1 || s->inrolari[j].id_materie != -1 ||
+                                        s->inrolari[j].note[0] != -1 || s->inrolari[j].note[1] != -1 ||
+                                        s->inrolari[j].note[2] != -1) {
                                         printf("%d %d %.2f %.2f %.2f\n",
                                             s->inrolari[j].id_student,
                                             s->inrolari[j].id_materie,
                                             s->inrolari[j].note[0],
                                             s->inrolari[j].note[1],
-                                            s->inrolari[j].note[2]
-                                        );
+                                            s->inrolari[j].note[2]);
                                     }
                                 }
                             }
                         } else {
                             for (int j = 0; j < s->nr_inrolari; j++) {
-                                if (strlen(condition_buffer) == 0 || evaluate_conditions(condition_buffer, &s->inrolari[j], "inrolari")) {
+                                if (strlen(condition_buffer) == 0 ||
+                                    evaluate_conditions(condition_buffer, &s->inrolari[j], "inrolari")) {
                                     char field_copy[NMAX];
-                                    // strcpy(field_copy, fields[i]);
                                     snprintf(field_copy, sizeof(field_copy), "%s", fields[i]);
                                     char* token = strtok(field_copy, " ");
                                     int first = 1;
                                     while (token) {
                                         if (!first) {
-                                            if (s->inrolari[j].id_student != -1 || s->inrolari[j].id_materie != -1 || s->inrolari[j].note[0] != -1 || s->inrolari[j].note[1] != -1 || s->inrolari[j].note[2] != -1) {
+                                            if (s->inrolari[j].id_student != -1 || s->inrolari[j].id_materie != -1 ||
+                                                s->inrolari[j].note[0] != -1 || s->inrolari[j].note[1] != -1 ||
+                                                s->inrolari[j].note[2] != -1) {
                                                 printf(" ");
                                             }
                                         }
@@ -489,11 +497,17 @@ int main(int argc, char *argv[]) {
                                             if (s->inrolari[j].id_materie != -1)
                                                 printf("%d", s->inrolari[j].id_materie);
                                         if (strstr(token, "note") || strstr(token, " note"))
-                                            if (s->inrolari[j].note[0] != -1 && s->inrolari[j].note[1] != -1 && s->inrolari[j].note[2] != -1)
-                                                printf("%.2f %.2f %.2f", s->inrolari[j].note[0], s->inrolari[j].note[1], s->inrolari[j].note[2]);
+                                            if (s->inrolari[j].note[0] != -1 &&
+                                                s->inrolari[j].note[1] != -1 && s->inrolari[j].note[2] != -1)
+                                                printf("%.2f %.2f %.2f",
+                                                    s->inrolari[j].note[0],
+                                                    s->inrolari[j].note[1],
+                                                    s->inrolari[j].note[2]);
                                         token = strtok(NULL, " ");
                                     }
-                                    if (s->inrolari[j].id_student != -1 || s->inrolari[j].id_materie != -1 || s->inrolari[j].note[0] != -1 || s->inrolari[j].note[1] != -1 || s->inrolari[j].note[2] != -1) {
+                                    if (s->inrolari[j].id_student != -1 || s->inrolari[j].id_materie != -1 ||
+                                        s->inrolari[j].note[0] != -1 || s->inrolari[j].note[1] != -1 ||
+                                        s->inrolari[j].note[2] != -1) {
                                         printf("\n");
                                     }
                                 }
@@ -501,103 +515,91 @@ int main(int argc, char *argv[]) {
                         }
                     }
                 }
-            } else if (strncmp(query, "UPDATE", 6) == 0) {
+            } else if (strncmp(query, "UPDATE", BUFFER_TABLE) == 0) {
                 char* set_keyword = strstr(query, " SET ");
                 if (set_keyword) {
                     *set_keyword = '\0';
-                    // strcpy(table_buffer, query + BUFFER_FIELD);
-                    snprintf(table_buffer, sizeof(table_buffer), "%s", query + BUFFER_TABLE);
+                    snprintf(table_buffer, sizeof(table_buffer), "%s", query + BUFFER_FIELD);
 
                     char* where_keyword = strstr(set_keyword + BUFFER_VALUE, " WHERE ");
                     if (where_keyword) {
                         *where_keyword = '\0';
-                        // strcpy(field_buffer, set_keyword + BUFFER_VALUE);
                         snprintf(field_buffer, sizeof(field_buffer), "%s", set_keyword + BUFFER_VALUE);
-                        // strcpy(condition_buffer, where_keyword + BUFFER_FIELD);
-                        snprintf(condition_buffer, sizeof(condition_buffer), "%s", where_keyword + BUFFER_CONDITION);
+                        snprintf(condition_buffer, sizeof(condition_buffer), "%s", where_keyword + BUFFER_FIELD);
                     } else {
-                        // strcpy(field_buffer, set_keyword + BUFFER_VALUE);
                         snprintf(field_buffer, sizeof(field_buffer), "%s", set_keyword + BUFFER_VALUE);
                     }
 
                     char* equal_sign = strchr(field_buffer, '=');
                     if (equal_sign) {
                         *equal_sign = '\0';
-                        // strcpy(value_buffer, equal_sign + BUFFER_EQUAL);
                         snprintf(value_buffer, sizeof(value_buffer), "%s", equal_sign + BUFFER_EQUAL);
 
                         while (isspace((unsigned char)*value_buffer)) {
-                            memmove(value_buffer, value_buffer + 1, strlen(value_buffer));
+                            memmove(value_buffer, value_buffer + BUFFER_EQUAL, strlen(value_buffer));
                         }
                     }
 
-                    // strcpy(fields[i], field_buffer);
                     snprintf(fields[i], sizeof(fields[i]), "%s", field_buffer);
-                    // strcpy(tables[i], table_buffer);
                     snprintf(tables[i], sizeof(tables[i]), "%s", table_buffer);
-                    // strcpy(conditions[i], condition_buffer);
                     snprintf(conditions[i], sizeof(conditions[i]), "%s", condition_buffer);
-                    // strcpy(values[i], value_buffer);
                     snprintf(values[i], sizeof(values[i]), "%s", value_buffer);
-
-                    // printf("Query %d: Field: '%s', Table: '%s', Value: '%s', Condition: '%s'\n", i + 1, field_buffer, table_buffer, value_buffer, condition_buffer);
 
                     if (strcmp(tables[i], "studenti") == 0) {
                         for (int j = 0; j < s->nr_studenti; j++) {
-                            if (strlen(condition_buffer) == 0 || evaluate_conditions(condition_buffer, &s->studenti[j], "studenti")) {
+                            if (strlen(condition_buffer) == 0 ||
+                                evaluate_conditions(condition_buffer, &s->studenti[j], "studenti")) {
                                 update_field(&s->studenti[j], "studenti", fields[i], values[i]);
                             }
                         }
                     } else if (strcmp(tables[i], "materii") == 0) {
                         for (int j = 0; j < s->nr_materii; j++) {
-                            if (strlen(condition_buffer) == 0 || evaluate_conditions(condition_buffer, &s->materii[j], "materii")) {
+                            if (strlen(condition_buffer) == 0 ||
+                                evaluate_conditions(condition_buffer, &s->materii[j], "materii")) {
                                 update_field(&s->materii[j], "materii", fields[i], values[i]);
                             }
                         }
                     } else if (strcmp(tables[i], "inrolari") == 0) {
                         for (int j = 0; j < s->nr_inrolari; j++) {
-                            if (strlen(condition_buffer) == 0 || evaluate_conditions(condition_buffer, &s->inrolari[j], "inrolari")) {
+                            if (strlen(condition_buffer) == 0 ||
+                                evaluate_conditions(condition_buffer, &s->inrolari[j], "inrolari")) {
                                 update_field(&s->inrolari[j], "inrolari", fields[i], values[i]);
                                 recalculate_media_generala(s);
                             }
                         }
                     }
                 }
-            } else if (strncmp(query, "DELETE FROM", 11) == 0) {
+            } else if (strncmp(query, "DELETE FROM", BUFFER_DELETE_FROM) == 0) {
                 char* where_keyword = strstr(query, " WHERE ");
                 if (where_keyword) {
                     *where_keyword = '\0';
-                    // strcpy(table_buffer, query + BUFFER_DELETE_FROM_WHERE);
-                    snprintf(table_buffer, sizeof(table_buffer), "%s", query + BUFFER_DELETE_FROM);
-                    // strcpy(condition_buffer, where_keyword + BUFFER_FIELD);
-                    snprintf(condition_buffer, sizeof(condition_buffer), "%s", where_keyword + BUFFER_CONDITION);
+                    snprintf(table_buffer, sizeof(table_buffer), "%s", query + BUFFER_DELETE_FROM_WHERE);
+                    snprintf(condition_buffer, sizeof(condition_buffer), "%s", where_keyword + BUFFER_FIELD);
                 } else {
-                    // strcpy(table_buffer, query + BUFFER_DELETE_FROM_WHERE);
-                    snprintf(table_buffer, sizeof(table_buffer), "%s", query + BUFFER_DELETE_FROM);
+                    snprintf(table_buffer, sizeof(table_buffer), "%s", query + BUFFER_DELETE_FROM_WHERE);
                 }
 
-                // strcpy(tables[i], table_buffer);
                 snprintf(tables[i], sizeof(tables[i]), "%s", table_buffer);
-                // strcpy(conditions[i], condition_buffer);
                 snprintf(conditions[i], sizeof(conditions[i]), "%s", condition_buffer);
-
-                // printf("Query %d: Table: '%s', Condition: '%s'\n", i + 1, table_buffer, condition_buffer);
 
                 if (strcmp(tables[i], "studenti") == 0) {
                     for (int j = 0; j < s->nr_studenti; j++) {
-                        if (strlen(condition_buffer) == 0 || evaluate_conditions(condition_buffer, &s->studenti[j], "studenti")) {
+                        if (strlen(condition_buffer) == 0 ||
+                            evaluate_conditions(condition_buffer, &s->studenti[j], "studenti")) {
                             delete_record(&s->studenti[j], "studenti");
                         }
                     }
                 } else if (strcmp(tables[i], "materii") == 0) {
                     for (int j = 0; j < s->nr_materii; j++) {
-                        if (strlen(condition_buffer) == 0 || evaluate_conditions(condition_buffer, &s->materii[j], "materii")) {
+                        if (strlen(condition_buffer) == 0 ||
+                            evaluate_conditions(condition_buffer, &s->materii[j], "materii")) {
                             delete_record(&s->materii[j], "materii");
                         }
                     }
                 } else if (strcmp(tables[i], "inrolari") == 0) {
                     for (int j = 0; j < s->nr_inrolari; j++) {
-                        if (strlen(condition_buffer) == 0 || evaluate_conditions(condition_buffer, &s->inrolari[j], "inrolari")) {
+                        if (strlen(condition_buffer) == 0 ||
+                            evaluate_conditions(condition_buffer, &s->inrolari[j], "inrolari")) {
                             delete_record(&s->inrolari[j], "inrolari");
                             recalculate_media_generala(s);
                         }
@@ -609,6 +611,5 @@ int main(int argc, char *argv[]) {
 
     fclose(file);
     elibereaza_secretariat(&s);
-    free(db);
     return 0;
 }
