@@ -28,12 +28,15 @@ void recalculate_media_generala(secretariat* s) {
             }
         }
         if (count > 0) {
-            s->studenti[i].medie_generala = (float)total / (float)count;
+            s->studenti[i].medie_generala = (float)round(total / (float)count * NMAX) / NMAX;
         } else {
             s->studenti[i].medie_generala = 0.0f;
         }
         if (s->studenti[i].medie_generala == 0.0) {
             s->studenti[i].medie_generala = -1.0f;
+        }
+        if (count == 0) {
+            s->studenti[i].medie_generala = 0.0f;
         }
     }
 }

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #define MAX_LINE 256
 #define NAME_MAX 40
@@ -11,10 +12,6 @@
 #define EPSILON 0.01
 
 #include "task1.h"
-
-float round_two(float valoare) {
-    return ((float)((int)(valoare * ROUND_PRECISION + ROUND_HALF_FLOAT + EPSILON))) / ROUND_PRECISION_FLOAT;
-}
 
 secretariat *citeste_secretariat(const char *nume_fisier) {
     FILE* f = fopen(nume_fisier, "r");
@@ -121,7 +118,8 @@ secretariat *citeste_secretariat(const char *nume_fisier) {
             for (int i = 0; i < s->nr_studenti; i++) {
                 if (numar_materii[i] > 0) {
                     s->studenti[i].medie_generala = suma_note[i] / (float)(numar_materii[i]);
-                    s->studenti[i].medie_generala = round_two(s->studenti[i].medie_generala);
+                    s->studenti[i].medie_generala =
+                    (float)round(s->studenti[i].medie_generala * ROUND_PRECISION + EPSILON) / ROUND_PRECISION_FLOAT;
                 }
             }
             free(numar_materii);
@@ -148,9 +146,6 @@ void elibereaza_secretariat(secretariat **s) {
         return;
     }
 
-    // for (int i = 0; i < (*s)->nr_studenti; i++) {
-    //     free((*s)->studenti[i].nume);
-    // }
     free((*s)->studenti);
 
     if ((*s)->materii) {

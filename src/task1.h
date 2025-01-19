@@ -1,5 +1,6 @@
 #pragma once
 
+#include <math.h>
 #include "../include/structuri.h"
 
 secretariat *citeste_secretariat(const char *nume_fisier);
