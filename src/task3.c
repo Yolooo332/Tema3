@@ -3,6 +3,9 @@
 
 unsigned char* XOR(unsigned char* block, size_t block_size, unsigned char* iv, size_t iv_size) {
     unsigned char* result = malloc(block_size * sizeof(unsigned char));
+    if (!result) {
+        return NULL;
+    }
     for (int i = 0; i < block_size; i++) {
         result[i] = block[i] ^ iv[i % iv_size];
     }
@@ -10,15 +13,14 @@ unsigned char* XOR(unsigned char* block, size_t block_size, unsigned char* iv, s
 }
 
 unsigned char* S_BOX(unsigned char* block, size_t block_size, unsigned char* key, size_t key_size) {
-    unsigned char* result = malloc(block_size * sizeof(unsigned char));
-    for (int i = 0; i < block_size; i++) {
-        result[i] = block[i] ^ key[i % key_size];
-    }
-    return result;
+    return XOR(block, block_size, key, key_size);
 }
 
 unsigned char* P_BOX(unsigned char* block, size_t block_size) {
     unsigned char* result = malloc(block_size * sizeof(unsigned char));
+    if (!result) {
+        return NULL;
+    }
     for (int i = 0; i < block_size; i++) {
         result[i] = block[(i * (block_size - 1) + 2) % block_size];
     }
