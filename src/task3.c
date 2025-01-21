@@ -46,8 +46,8 @@ void cripteaza_studenti(secretariat *secretariat, void *key,
         block_size = students_size / BLOCKS + 1;
     }
 
-    unsigned char *students_bytes = (unsigned char *)secretariat->studenti;
-    unsigned char **block = malloc(BLOCKS * sizeof(unsigned char*));
+    unsigned char* students_bytes = (unsigned char*)secretariat->studenti;
+    unsigned char** block = malloc(BLOCKS * sizeof(unsigned char*));
     size_t padding = students_size - block_size * 3;
     for (int i = 0; i < BLOCKS; i++) {
         block[i] = malloc(block_size * sizeof(unsigned char));
